@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Echo Pads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one round handheld unit centred on the page, status line and small controls underneath. */
+:root {
+  --bg: #e3e8ed;
+  --fg: #171b1f;
+  --muted: #59636d;
+  --line: #b7c0c9;
+  --bezel: #1c2025;
+  --hub: #cfd6dd;
+  --accent: #c93f25;
+  --on-accent: #ffffff;
+  --g: #1f8a45;  --g-lit: #66f59a;
+  --r: #c23a36;  --r-lit: #ff7a72;
+  --y: #d9a91a;  --y-lit: #ffe44d;
+  --b: #2f63c9;  --b-lit: #7aaeff;
+  --shape: #ffffff;
+  --shape-edge: #1c2025;
+  --display: "Archivo Black", "Arial Black", Impact, sans-serif;
+  --mono: "DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14171b; --fg: #e8ebee; --muted: #98a1ab; --line: #3a424b;
+    --hub: #2a3037; --accent: #ff7a55; --on-accent: #1b0b05;
+    --g: #176233; --r: #8c2a27; --y: #9a7a12; --b: #21478f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14171b; --fg: #e8ebee; --muted: #98a1ab; --line: #3a424b;
+  --hub: #2a3037; --accent: #ff7a55; --on-accent: #1b0b05;
+  --g: #176233; --r: #8c2a27; --y: #9a7a12; --b: #21478f;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--mono);
+  padding-block: 24px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.app {
+  max-width: 440px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+header { text-align: center; display: flex; flex-direction: column; gap: 8px; }
+h1 {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 30px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.how { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; text-wrap: balance; }
+
+.disc {
+  container-type: inline-size;
+  width: min(88vw, 400px);
+  aspect-ratio: 1 / 1;
+  position: relative;
+  border-radius: 50%;
+  background: var(--bezel);
+  padding: 3%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 2.2%;
+  box-shadow: 0 0 0 1px var(--line), 0 14px 30px rgba(0, 0, 0, 0.22);
+}
+.pad {
+  position: relative;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background: var(--c);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.pad.lit { background: var(--c-lit); box-shadow: inset 0 0 9cqw rgba(255, 255, 255, 0.4); }
+.pad:focus-visible { outline: 3px solid var(--fg); outline-offset: -6px; }
+.p0 { --c: var(--g); --c-lit: var(--g-lit); border-radius: 100% 1.6cqw 1.6cqw 1.6cqw; }
+.p1 { --c: var(--r); --c-lit: var(--r-lit); border-radius: 1.6cqw 100% 1.6cqw 1.6cqw; }
+.p2 { --c: var(--y); --c-lit: var(--y-lit); border-radius: 1.6cqw 1.6cqw 1.6cqw 100%; }
+.p3 { --c: var(--b); --c-lit: var(--b-lit); border-radius: 1.6cqw 1.6cqw 100% 1.6cqw; }
+
+.shape {
+  position: absolute;
+  width: 32%;
+  height: 32%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  font-family: var(--display);
+  font-size: 15cqw;
+  line-height: 1;
+  color: var(--shape);
+  -webkit-text-stroke: 1.6cqw var(--shape-edge);
+  paint-order: stroke fill;
+}
+.disc.nums .shape { display: flex; }
+.p0 .shape { top: 32%; left: 32%; }
+.p1 .shape { top: 32%; right: 32%; }
+.p2 .shape { bottom: 32%; left: 32%; }
+.p3 .shape { bottom: 32%; right: 32%; }
+
+.hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 42%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: var(--hub);
+  border: 1.8cqw solid var(--bezel);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1cqw;
+}
+.num { font-weight: 500; font-size: 11cqw; line-height: 1; font-variant-numeric: tabular-nums; }
+.lbl { font-size: 3cqw; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+.start {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 4.2cqw;
+  min-height: 11cqw;
+  padding: 0 6cqw;
+  border: 0;
+  border-radius: 99px;
+  background: var(--accent);
+  color: var(--on-accent);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.start:focus-visible, .tog:focus-visible { outline: 3px solid var(--fg); outline-offset: 2px; }
+
+.status { margin: 0; min-height: 1.5em; font-size: 16px; text-align: center; text-wrap: balance; }
+.bar { display: flex; gap: 16px; align-items: center; justify-content: center; flex-wrap: wrap; font-size: 14px; }
+.best b { font-weight: 500; font-variant-numeric: tabular-nums; }
+.tog {
+  font-family: var(--mono);
+  font-size: 13px;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+}
+</style>
+<style>:root{color-scheme:light}body{margin:0;min-height:100vh}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+<main class="app">
+  <header>
+    <h1>Echo Pads</h1>
+    <p class="how">Watch the lights, then copy them back. Each round adds one more beat.</p>
+  </header>
+
+  <div class="disc" id="disc">
+    <button type="button" class="pad p0" data-i="0" aria-label="Green pad, key 1"><span class="shape" aria-hidden="true">1</span></button>
+    <button type="button" class="pad p1" data-i="1" aria-label="Red pad, key 2"><span class="shape" aria-hidden="true">2</span></button>
+    <button type="button" class="pad p2" data-i="2" aria-label="Yellow pad, key 3"><span class="shape" aria-hidden="true">3</span></button>
+    <button type="button" class="pad p3" data-i="3" aria-label="Blue pad, key 4"><span class="shape" aria-hidden="true">4</span></button>
+    <div class="hub">
+      <span class="num" id="num">0</span>
+      <span class="lbl">Round</span>
+      <button type="button" class="start" id="start">Start</button>
+    </div>
+  </div>
+
+  <p class="status" id="status" aria-live="polite">Press Start. Keys 1 to 4 also work.</p>
+
+  <div class="bar">
+    <span class="best">Best <b id="best">0</b></span>
+    <button type="button" class="tog" id="snd" aria-pressed="true">Sound on</button>
+    <button type="button" class="tog" id="nums" aria-pressed="false">Numbers off</button>
+  </div>
+</main>
+
+<script>
+(function () {
+  var pads = Array.prototype.slice.call(document.querySelectorAll('.pad'));
+  var numEl = document.getElementById('num');
+  var statusEl = document.getElementById('status');
+  var bestEl = document.getElementById('best');
+  var startBtn = document.getElementById('start');
+  var sndBtn = document.getElementById('snd');
+
+  var FREQ = [415.3, 311.1, 252, 209.6];
+  var ctx = null;
+  var soundOn = true;
+  var seq = [];
+  var pos = 0;
+  var state = 'idle';
+  var best = 0;
+  var runId = 0;
+  var held = {};
+  var down = {};
+
+  try { best = parseInt(localStorage.getItem('echoPadsBest') || '0', 10) || 0; } catch (e) {}
+  bestEl.textContent = best;
+
+  function setStatus(t) { statusEl.textContent = t; }
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  function ensureCtx() {
+    if (!ctx) {
+      try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ctx = null; }
+    }
+    if (ctx && ctx.state === 'suspended') { try { ctx.resume(); } catch (e) {} }
+  }
+  function tone(i) {
+    if (!ctx || !soundOn) return null;
+    var t = ctx.currentTime;
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    o.type = 'square';
+    o.frequency.value = FREQ[i];
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.07, t + 0.02);
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.start(t);
+    return { o: o, g: g };
+  }
+  function untone(h) {
+    if (!h || !ctx) return;
+    var t = ctx.currentTime;
+    try {
+      h.g.gain.cancelScheduledValues(t);
+      h.g.gain.setValueAtTime(Math.max(h.g.gain.value, 0.0001), t);
+      h.g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+      h.o.stop(t + 0.06);
+    } catch (e) {}
+  }
+  function buzz() {
+    if (!ctx || !soundOn) return;
+    var t = ctx.currentTime;
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.value = 98;
+    g.gain.setValueAtTime(0.09, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.start(t);
+    o.stop(t + 0.72);
+  }
+
+  function lightOn(i) { pads[i].classList.add('lit'); held[i] = tone(i); }
+  function lightOff(i) { pads[i].classList.remove('lit'); untone(held[i]); held[i] = null; }
+  function clearAll() {
+    pads.forEach(function (p, i) { p.classList.remove('lit'); untone(held[i]); held[i] = null; down[i] = false; });
+  }
+
+  function timing() {
+    var on = Math.max(240, 560 - seq.length * 24);
+    return { on: on, gap: Math.max(120, Math.round(on * 0.45)) };
+  }
+
+  function showSeq() {
+    var id = ++runId;
+    state = 'show';
+    setStatus('Watch');
+    return wait(700).then(function () {
+      var tm = timing();
+      var k = 0;
+      function step() {
+        if (id !== runId) return;
+        if (k >= seq.length) { pos = 0; state = 'input'; setStatus('Your turn'); return; }
+        var i = seq[k++];
+        lightOn(i);
+        wait(tm.on).then(function () {
+          if (id !== runId) return;
+          lightOff(i);
+          return wait(tm.gap);
+        }).then(step);
+      }
+      step();
+    });
+  }
+
+  function nextRound() {
+    seq.push(Math.floor(Math.random() * 4));
+    numEl.textContent = seq.length;
+    showSeq();
+  }
+
+  function startGame() {
+    ensureCtx();
+    runId++;
+    clearAll();
+    seq = [];
+    pos = 0;
+    startBtn.textContent = 'Restart';
+    nextRound();
+  }
+
+  function fail() {
+    state = 'over';
+    runId++;
+    var score = seq.length - 1;
+    var isBest = score > best;
+    if (isBest) {
+      best = score;
+      bestEl.textContent = best;
+      try { localStorage.setItem('echoPadsBest', String(best)); } catch (e) {}
+    }
+    buzz();
+    pads.forEach(function (p) { p.classList.add('lit'); });
+    setTimeout(function () {
+      pads.forEach(function (p, i) { if (!down[i]) p.classList.remove('lit'); });
+    }, 600);
+    if (score === 0) setStatus('Missed the first beat. Go again.');
+    else setStatus('Cleared ' + score + (score === 1 ? ' round.' : ' rounds.') + (isBest ? ' New best.' : ''));
+    startBtn.textContent = 'Again';
+  }
+
+  function press(i) {
+    if (state !== 'input' || down[i]) return;
+    down[i] = true;
+    lightOn(i);
+    if (seq[pos] === i) {
+      pos++;
+      if (pos === seq.length) {
+        state = 'between';
+        setStatus('Round ' + seq.length + ' cleared');
+        var id = runId;
+        setTimeout(function () { if (id === runId && state === 'between') nextRound(); }, 900);
+      }
+    } else {
+      fail();
+    }
+  }
+  function release(i) {
+    if (!down[i]) return;
+    down[i] = false;
+    lightOff(i);
+  }
+
+  pads.forEach(function (p, i) {
+    p.addEventListener('pointerdown', function (e) { e.preventDefault(); ensureCtx(); press(i); });
+    p.addEventListener('pointerup', function () { release(i); });
+    p.addEventListener('pointercancel', function () { release(i); });
+    p.addEventListener('pointerleave', function () { release(i); });
+    p.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  });
+
+  var KEYS = { '1': 0, '2': 1, '3': 2, '4': 3 };
+  document.addEventListener('keydown', function (e) {
+    if (e.repeat) return;
+    var i = KEYS[e.key];
+    if (i === undefined && (e.key === 'Enter' || e.key === ' ') && e.target && e.target.classList && e.target.classList.contains('pad')) {
+      i = pads.indexOf(e.target);
+      e.preventDefault();
+    }
+    if (i !== undefined && i >= 0) { ensureCtx(); press(i); }
+  });
+  document.addEventListener('keyup', function (e) {
+    var i = KEYS[e.key];
+    if (i === undefined && (e.key === 'Enter' || e.key === ' ') && e.target && e.target.classList && e.target.classList.contains('pad')) {
+      i = pads.indexOf(e.target);
+    }
+    if (i !== undefined && i >= 0) release(i);
+  });
+  window.addEventListener('blur', function () { pads.forEach(function (p, i) { release(i); }); });
+
+
+  var numsBtn = document.getElementById('nums');
+  var discEl = document.getElementById('disc');
+  function setNums(on) {
+    discEl.classList.toggle('nums', on);
+    numsBtn.setAttribute('aria-pressed', String(on));
+    numsBtn.textContent = on ? 'Numbers on' : 'Numbers off';
+    try { localStorage.setItem('echoPadsNums', on ? '1' : '0'); } catch (e) {}
+  }
+  var numsStart = false;
+  try { numsStart = localStorage.getItem('echoPadsNums') === '1'; } catch (e) {}
+  setNums(numsStart);
+  numsBtn.addEventListener('click', function () { setNums(!discEl.classList.contains('nums')); });
+
+  startBtn.addEventListener('click', startGame);
+  sndBtn.addEventListener('click', function () {
+    soundOn = !soundOn;
+    sndBtn.setAttribute('aria-pressed', String(soundOn));
+    sndBtn.textContent = soundOn ? 'Sound on' : 'Sound off';
+    if (!soundOn) pads.forEach(function (p, i) { untone(held[i]); held[i] = null; });
+    else ensureCtx();
+  });
+})();
+</script>
+
+</body>
+</html>
